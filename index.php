@@ -7,7 +7,7 @@ include "db_connection.php";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CRUD Form Example</title>
+    <title>CRUD - User Management</title>
     <!-- Bootstrap 5 CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -70,6 +70,7 @@ include "db_connection.php";
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Further Action</th>
             </tr>
           </thead>
           <tbody id="userTableBody">
@@ -87,6 +88,11 @@ if ($result->num_rows > 0) {
         echo "<td>" . $row["name"]  . "</td>";
         echo "<td>" . $row["email"] . "</td>";
         echo "<td>" . $row["phone"] . "</td>";
+        echo "<td class='text-center'>";
+        echo "<a href='edit_user.php?id=".$row["id"]."' class='btn btn-warning btn-sm me-2'>Update</a>";
+        echo "<a href='delete_user.php?id=".$row["id"]."'class='btn btn-danger btn-sm'onclick=\"return confirm('Are you sure?');\">Delete</a>"; //work on the pop up
+        echo "</td>";
+
         echo "</tr>";
     }
 } else {
@@ -101,7 +107,6 @@ $conn->close();
         </table>
       </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </div>
   </body>
 </html>
