@@ -20,7 +20,7 @@ $user = $result->fetch_assoc();
 <div class=" mt-5 container">
     <h3>Edit User</h3>
 
-<form method="POST" action="update_user.php">
+<form method="POST" action="operations.php">
   <input type="hidden" name="id" value="<?= $user['id']; ?>">
 
   <div class="mb-3">
