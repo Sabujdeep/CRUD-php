@@ -1,5 +1,5 @@
 <?php
-include "db_connection.php";
+include "db_connection.php";  // Connecting to the databawse
 ?>
 
 <!DOCTYPE html>
@@ -21,7 +21,7 @@ include "db_connection.php";
       <h2 class="mb-4 txtDes">User Management</h2>
 
       <!-- CREATE/UPDATE FORM -->
-      <form id="userForm" method="POST" action="save_user.php">
+      <form id="userForm" method="POST" action="operations.php" enctype="multipart/form-data" >
         <div class="mb-3">
           <label for="name" class="form-label">Name</label>
           <input
@@ -57,8 +57,24 @@ include "db_connection.php";
           />
         </div>
 
+       <!-- DOCUMENT UPLOAD SECTION - NEW -->
+
+          <div class="mb-3">
+            <label for="document" class="form-label">Choose Document</label>
+            <input
+              type="file"
+              class="form-control"
+              id="document"
+              name="document"
+              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+              required
+            />
+            <small class="text-muted">Accepted formats: PDF, DOC, DOCX, TXT, JPG, PNG (Max 5MB)</small>
+          </div>
+
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
+
 
       <!-- TABLE (READ & DELETE) -->
       <div class="mt-5">
@@ -90,9 +106,10 @@ if ($result->num_rows > 0) {
         echo "<td>" . $row["phone"] . "</td>";
         echo "<td class='text-center'>";
         echo "<a href='edit_user.php?id=".$row["id"]."' class='btn btn-warning btn-sm me-2'>Update</a>";
-        echo "<a href='delete_user.php?id=".$row["id"]."'class='btn btn-danger btn-sm'onclick=\"return confirm('Are you sure?');\">Delete</a>"; //work on the pop up
-        echo "</td>";
+        echo "<a href='operations.php?delete_id={$row['id']}' class='btn btn-danger btn-sm'
+      onclick=\"return confirm('Are you sure?');\">Delete</a>";
 
+        echo "</td>";
         echo "</tr>";
     }
 } else {
@@ -110,4 +127,5 @@ $conn->close();
 </div>
   </body>
 </html>
+
 
