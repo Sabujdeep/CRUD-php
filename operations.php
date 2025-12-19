@@ -1,5 +1,9 @@
 <?php
 
+//     echo '<pre>';
+// var_dump($_POST);
+// var_dump($_FILES);
+// exit;
 
 session_start();
 include "db_connection.php";
@@ -9,21 +13,39 @@ include "db_connection.php";
 if (isset($_GET['delete_id'])) {
 
     $id = (int)$_GET['delete_id'];
-
     $conn->begin_transaction();
 
     try {
-        // 1️⃣ Delete documents first
-        $stmt1 = $conn->prepare("DELETE FROM userdoc WHERE user_id = ?");
-        $stmt1->bind_param("i", $id);
-        $stmt1->execute();
-        $stmt1->close();
+        // 1️⃣ Get document paths
+        $stmt = $conn->prepare(
+            "SELECT document_path FROM userdoc_new WHERE user_id = ?"
+        );
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        // 2️⃣ Delete user
-        $stmt2 = $conn->prepare("DELETE FROM usermgmt WHERE id = ?");
-        $stmt2->bind_param("i", $id);
-        $stmt2->execute();
-        $stmt2->close();
+        while ($row = $result->fetch_assoc()) {
+            if (file_exists($row['document_path'])) {
+                unlink($row['document_path']); // delete file
+            }
+        }
+        $stmt->close();
+
+        // 2️⃣ Delete documents from DB
+        $stmt = $conn->prepare(
+            "DELETE FROM userdoc_new WHERE user_id = ?"
+        );
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
+
+        // 3️⃣ Delete user
+        $stmt = $conn->prepare(
+            "DELETE FROM usermgmt WHERE id = ?"
+        );
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
 
         $conn->commit();
 
@@ -37,29 +59,81 @@ if (isset($_GET['delete_id'])) {
 }
 
 
+
 /* ==================== UPDATE USER ==================== */
 if (isset($_POST['id']) && !empty($_POST['id'])) {
-    $id    = $_POST['id'];
+
+    $id    = (int)$_POST['id'];
     $name  = $_POST['name'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
 
-    $stmt = $conn->prepare("UPDATE usermgmt SET name=?, email=?, phone=? WHERE id=?");
-    $stmt->bind_param("sssi", $name, $email, $phone, $id);
+    $conn->begin_transaction();
 
-    if ($stmt->execute()) {
+    try {
+        // 1️⃣ Update user
+        $stmt = $conn->prepare(
+            "UPDATE usermgmt SET name=?, email=?, phone=? WHERE id=?"
+        );
+        $stmt->bind_param("sssi", $name, $email, $phone, $id);
+        $stmt->execute();
+        $stmt->close();
+
+        // 2️⃣ Handle document replace (if new file uploaded)
+        if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
+
+            // Get old file
+            $stmt = $conn->prepare(
+                "SELECT document_path FROM userdoc_new WHERE user_id = ?"
+            );
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $old = $res->fetch_assoc();
+            $stmt->close();
+
+            if ($old && file_exists($old['document_path'])) {
+                unlink($old['document_path']); // delete old file
+            }
+
+            // Upload new file
+            $upload_dir = "uploads/";
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
+
+            $file_name = time() . "_" . basename($_FILES['document']['name']);
+            $file_path = $upload_dir . $file_name;
+
+            move_uploaded_file($_FILES['document']['tmp_name'], $file_path);
+
+            // Replace DB record
+            $stmt = $conn->prepare(
+                "REPLACE INTO userdoc_new (user_id, document_name, document_path)
+                 VALUES (?, ?, ?)"
+            );
+            $stmt->bind_param(
+                "iss",
+                $id,
+                $_FILES['document']['name'],
+                $file_path
+            );
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        $conn->commit();
         header("Location: index.php");
         exit();
-    } else {
-        echo "Error updating record: " . $conn->error;
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo "Update failed: " . $e->getMessage();
     }
-    $stmt->close();
-    $conn->close();
-    exit();
 }
 
 /* ==================== INSERT USER WITH DOCUMENT ==================== */
-if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($_POST['id'])) {
+if (isset($_POST['action']) && $_POST['action'] === 'create') {
 
     $name  = $_POST['name'];
     $email = $_POST['email'];
@@ -113,7 +187,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($_POST['id'])) {
 
                     // Insert document record into userdoc table
                     $doc_stmt = $conn->prepare(
-                        "INSERT INTO userdoc (user_id, document_name, document_path) VALUES (?, ?, ?)"
+                        "INSERT INTO userdoc_new (user_id, document_name, document_path) VALUES (?, ?, ?)"
                     );
 
                     $doc_stmt->bind_param("iss", $new_user_id, $file_name, $file_path);
@@ -145,53 +219,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($_POST['id'])) {
             }
         }
 
-        // ---------- SHOW SUCCESS MESSAGE ----------
-        ?>
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>Success</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-            <link rel="stylesheet" href="style.css">
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        </head>
-        <body class="main">
-            <script>
-                <?php if ($document_uploaded): ?>
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        html: 'User and document saved successfully!<br><small>User ID: <?php echo $new_user_id; ?></small>',
-                        confirmButtonColor: '#0d6efd'
-                    }).then((result) => {
-                        window.location.href = 'index.php';
-                    });
-                <?php elseif (!empty($upload_error)): ?>
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Partial Success',
-                        html: 'User saved (ID: <?php echo $new_user_id; ?>) but<br><?php echo addslashes($upload_error); ?>',
-                        confirmButtonColor: '#ffc107'
-                    }).then((result) => {
-                        window.location.href = 'index.php';
-                    });
-                <?php else: ?>
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'User Saved',
-                        html: 'User saved successfully!<br> But <br>User ID: <?php echo $new_user_id; ?><br><b>No document uploaded!</b>',
-                        confirmButtonColor: '#0d6efd'
-                    }).then((result) => {
-                        window.location.href = 'index.php';
-                    });
-                <?php endif; ?>
-            </script>
-        </body>
-        </html>
-        <?php
+        // ---------- SET FLASH MESSAGE ----------
+        $_SESSION['alert'] = [
+            'type' => $document_uploaded ? 'success' : (!empty($upload_error) ? 'warning' : 'info'),
+            'title' => $document_uploaded ? 'Success' : (!empty($upload_error) ? 'Partial Success' : 'User Saved'),
+            'message' => $document_uploaded
+                ? "User and document saved successfully!<br><small>User ID: $new_user_id</small>"
+                : (!empty($upload_error)
+                    ? "User saved (ID: $new_user_id) but<br>$upload_error"
+                    : "User saved successfully!<br>User ID: $new_user_id<br><b>No document uploaded!</b>")
+        ];
+
         $stmt->close();
+
+        header("Location: success.php");
+        exit();
+
     } else { 
         echo "Error inserting user: " . $stmt->error; 
     } 

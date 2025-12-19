@@ -13,7 +13,7 @@ include "db_connection.php";  // Connecting to the databawse
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./Styles/style.css">
   </head>
   <body>
 <div class="mainContainer">
@@ -71,6 +71,8 @@ include "db_connection.php";  // Connecting to the databawse
             />
             <small class="text-muted">Accepted formats: PDF, DOC, DOCX, TXT, JPG, PNG (Max 5MB)</small>
           </div>
+          <input type="hidden" name="action" value="create">
+
 
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
@@ -86,7 +88,9 @@ include "db_connection.php";  // Connecting to the databawse
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Document</th>
               <th>Further Action</th>
+
             </tr>
           </thead>
           <tbody id="userTableBody">
@@ -94,24 +98,48 @@ include "db_connection.php";  // Connecting to the databawse
              <?php
 
 // SQL to fetch all users
-$sql    = "SELECT * FROM usermgmt";
+$sql = "
+SELECT 
+    u.id, u.name, u.email, u.phone,
+    d.document_path
+FROM usermgmt u
+LEFT JOIN userdoc_new d ON u.id = d.user_id
+";
+
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        echo "<tr>";
-        echo "<td>" . $row["id"]    . "</td>";
-        echo "<td>" . $row["name"]  . "</td>";
-        echo "<td>" . $row["email"] . "</td>";
-        echo "<td>" . $row["phone"] . "</td>";
-        echo "<td class='text-center'>";
-        echo "<a href='edit_user.php?id=".$row["id"]."' class='btn btn-warning btn-sm me-2'>Update</a>";
-        echo "<a href='operations.php?delete_id={$row['id']}' class='btn btn-danger btn-sm'
-      onclick=\"return confirm('Are you sure?');\">Delete</a>";
 
-        echo "</td>";
-        echo "</tr>";
+    $img = "uploads/default.png"; // fallback image
+
+    if (!empty($row['document_path']) && file_exists($row['document_path'])) {
+        $img = $row['document_path'];
     }
+
+    echo "<tr>";
+    echo "<td>{$row['id']}</td>";
+    echo "<td>{$row['name']}</td>";
+    echo "<td>{$row['email']}</td>";
+    echo "<td>{$row['phone']}</td>";
+
+    // IMAGE PREVIEW
+    echo "<td class='text-center'>
+            <a href='{$img}' target='_blank'>
+    <img src='{$img}' width='60' height='60'
+         style='object-fit:cover;border-radius:6px;'>
+</a>
+          </td>";
+
+    echo "<td class='text-center'>
+            <a href='edit_user.php?id={$row['id']}' class='btn btn-warning btn-sm me-2'>Update</a>
+            <a href='operations.php?delete_id={$row['id']}'
+               class='btn btn-danger btn-sm'
+               onclick=\"return confirm('Are you sure?');\">Delete</a>
+          </td>";
+    echo "</tr>";
+}
+
 } else {
     echo "<tr><td colspan='5'>No users found.</td></tr>";
 }
