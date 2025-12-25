@@ -114,7 +114,7 @@ if ($result->num_rows > 0) {
     $img = "uploads/default.png"; // fallback image
 
     if (!empty($row['document_path']) && file_exists($row['document_path'])) {
-        $img = $row['document_path'];
+        $img = $row['document_path'];   //both has to be true or else blank img will show
     }
 
     echo "<tr>";

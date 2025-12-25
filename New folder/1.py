@@ -1,0 +1,12 @@
+print(type({1}))
+print(type({}))
+print({1,2,3} & {3,4,5})
+print([1,2,3] * 2)
+print([[]] * 3)
+a = [[]] * 3
+a[0].append(1)
+print(a)
+print(1 in [1, 2, 3])
+print("a" * 0)
+print(min([1, 2, 3, -1]))
+print(all([True, 1, ""]))

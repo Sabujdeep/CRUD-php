@@ -1,20 +1,12 @@
 <?php
-
-//     echo '<pre>';
-// var_dump($_POST);
-// var_dump($_FILES);
-// exit;
-
 session_start();
 include "db_connection.php";
 
-/* ==================== DELETE USER ==================== */
 /* ==================== DELETE USER + DOCUMENT ==================== */
 if (isset($_GET['delete_id'])) {
 
     $id = (int)$_GET['delete_id'];
-    $conn->begin_transaction();
-
+    $conn->begin_transaction();     //runs all the code at one time if it fails, it begins from the start
     try {
         // 1️⃣ Get document paths
         $stmt = $conn->prepare(
@@ -49,8 +41,8 @@ if (isset($_GET['delete_id'])) {
 
         $conn->commit();
 
-        header("Location: index.php");
-        exit();
+        header("Location: index.php"); //redirects user
+        exit();     
 
     } catch (Exception $e) {
         $conn->rollback();
@@ -97,12 +89,12 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
             }
 
             // Upload new file
-            $upload_dir = "uploads/";
+            $upload_dir = "uploads/"; //prevents upload failure
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0755, true);
             }
 
-            $file_name = time() . "_" . basename($_FILES['document']['name']);
+            $file_name = time() . "_" . basename($_FILES['document']['name']); 
             $file_path = $upload_dir . $file_name;
 
             move_uploaded_file($_FILES['document']['tmp_name'], $file_path);
@@ -150,10 +142,6 @@ if (isset($_POST['action']) && $_POST['action'] === 'create') {
         $document_uploaded = false;
         $upload_error = "";
 
-        // ---------- DEBUG: Check if file is being uploaded ----------
-        if (isset($_FILES['document'])) {
-            error_log("File upload detected. Error code: " . $_FILES['document']['error']);
-        }
 
         // ---------- HANDLE DOCUMENT UPLOAD ----------
         if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
@@ -185,7 +173,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'create') {
                     
                     error_log("File moved successfully. Inserting into database...");
 
-                    // Insert document record into userdoc table
+                    // Insert document record into userdoc_new table
                     $doc_stmt = $conn->prepare(
                         "INSERT INTO userdoc_new (user_id, document_name, document_path) VALUES (?, ?, ?)"
                     );
