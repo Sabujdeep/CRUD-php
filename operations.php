@@ -131,6 +131,20 @@ if (isset($_POST['action']) && $_POST['action'] === 'create') {
     $email = $_POST['email'];
     $phone = $_POST['phone'];
 
+    // Phone validation: must be exactly 10 digits
+if (!preg_match('/^\d{10}$/', $phone)) {
+    // Set alert for invalid phone
+    $_SESSION['alert'] = [
+        'type' => 'error',
+        'title' => 'Invalid Phone Number',
+        'message' => 'Phone number must be exactly 10 digits.'
+    ];
+
+    // Redirect back to index.php (PRG pattern)
+    header("Location: index.php");
+    exit;
+}
+
     // ---------- INSERT USER FIRST ----------
     $stmt = $conn->prepare("INSERT INTO usermgmt (name, email, phone) VALUES (?, ?, ?)");
     $stmt->bind_param("sss", $name, $email, $phone);
