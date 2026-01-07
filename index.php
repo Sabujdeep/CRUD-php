@@ -99,13 +99,13 @@ session_start();
     
 <div class="mainContainer">
       <div class="container mt-15">
-      <h2 class="mb-4 txtDes" id="registration">User Details</h2>
+      <h2 class="mb-4 txtDes" id="registration">Add User</h2>
 
       <!-- CREATE/UPDATE FORM -->
       <form id="userForm" method="POST" action="operations.php" enctype="multipart/form-data" >
             <input type="hidden" name="id" value="<?= $_SESSION['user_id'] ?>">
-            <input type="hidden" name="action" value="update">
-        <!-- <div class="mb-3">
+            <input type="hidden" name="action" value="upload">
+        <div class="mb-3">
           <label for="name" class="form-label fw-medium">Name</label>
           <input
             type="text"
@@ -127,7 +127,7 @@ session_start();
             placeholder="Enter email"
             required
           />
-        </div>  -->
+        </div> 
 
         <div class="mb-3 fw-medium">
           <label for="phone" class="form-label">Phone</label>
@@ -252,7 +252,7 @@ session_start();
             />
             <small class="text-muted">Accepted formats: PDF, DOC, DOCX, TXT, JPG, PNG (Max 5MB)</small>
           </div>
-          <input type="hidden" name="action" value="create">
+          <!-- <input type="hidden" name="action" value="create"> -->
 
 
         <button type="submit" class="btn btn-primary">Submit</button>

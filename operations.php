@@ -11,7 +11,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'login') {
 
     // Fetch user by email
     $stmt = $conn->prepare(
-        "SELECT id, password FROM usermgmt WHERE email = ?"
+        "SELECT id, password FROM admins WHERE email = ?"
     );
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -45,7 +45,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'login') {
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['logged_in'] = true;
 
-    header("Location: index.php");
+    header("Location: welcome.php");
     exit();
 }
 
@@ -60,7 +60,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'signup') {
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
     // Check email
-    $check = $conn->prepare("SELECT id FROM usermgmt WHERE email = ?");
+    $check = $conn->prepare("SELECT id FROM admins WHERE email = ?");
     $check->bind_param("s", $email);
     $check->execute();
     $check->store_result();
@@ -78,21 +78,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'signup') {
 
     // INSERT USER
     $stmt = $conn->prepare(
-        "INSERT INTO usermgmt (name, email, phone, gender, skills, password)
-         VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO admins (name, email, password)
+         VALUES (?, ?, ?)"
     );
 
-    $phone = "";
-    $gender = "";
-    $skills = "";
-
     $stmt->bind_param(
-        "ssssss",
+        "sss",
         $name,
         $email,
-        $phone,
-        $gender,
-        $skills,
         $hashedPassword
     );
 
@@ -252,15 +245,15 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
 
 /* ==================== INSERT USER WITH DOCUMENT ==================== */
 
-if (isset($_POST['action']) && $_POST['action'] === 'update') {
+if (isset($_POST['action']) && $_POST['action'] === 'upload') {
 
-    $id      = (int)$_POST['id'];// logged-in user ID
-    $phone   = $_POST['phone'];
-    $gender  = $_POST['gender'] ?? '';
-    $skills  = $_POST['skills'] ?? [];
+    $name  = $_POST['name'];
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
+    $gender = $_POST['gender'] ?? '';
+    $skills = $_POST['skills'] ?? [];
     $skillsStr = implode(', ', $skills);
 
-    // Phone validation
     if (!preg_match('/^\d{10}$/', $phone)) {
         $_SESSION['alert'] = [
             'type' => 'error',
@@ -272,59 +265,43 @@ if (isset($_POST['action']) && $_POST['action'] === 'update') {
     }
 
     $conn->begin_transaction();
+
     try {
-        // Update user
+        // Insert user
         $stmt = $conn->prepare(
-            "UPDATE usermgmt SET phone=?, gender=?, skills=? WHERE id=?"
+            "INSERT INTO users (name, email, phone, gender, skills)
+             VALUES (?, ?, ?, ?, ?)"
         );
-        $stmt->bind_param("sssi", $phone, $gender, $skillsStr, $id);
+        $stmt->bind_param("sssss", $name, $email, $phone, $gender, $skillsStr);
         $stmt->execute();
+        $user_id = $conn->insert_id;
         $stmt->close();
 
-        $document_uploaded = false;
-        $upload_error = "";
-
-        // Handle document upload
-        if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
-
-            // Delete old file
-            $stmt = $conn->prepare("SELECT document_path FROM userdoc_new WHERE user_id=?");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-            $res = $stmt->get_result();
-            $old = $res->fetch_assoc();
-            $stmt->close();
-
-            if ($old && file_exists($old['document_path'])) unlink($old['document_path']);
-
-            // Upload new file
+        // Upload document
+        if (!empty($_FILES['document']['name'])) {
             $upload_dir = "uploads/";
             if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
 
             $file_name = $_FILES['document']['name'];
             $file_path = $upload_dir . time() . "_" . basename($file_name);
 
-            if (move_uploaded_file($_FILES['document']['tmp_name'], $file_path)) {
-                $stmt = $conn->prepare(
-                    "REPLACE INTO userdoc_new (user_id, document_name, document_path) VALUES (?, ?, ?)"
-                );
-                $stmt->bind_param("iss", $id, $file_name, $file_path);
-                $stmt->execute();
-                $stmt->close();
-                $document_uploaded = true;
-            } else {
-                $upload_error = "File upload failed.";
-            }
+            move_uploaded_file($_FILES['document']['tmp_name'], $file_path);
+
+            $stmt = $conn->prepare(
+                "INSERT INTO user_documents (user_id, document_name, document_path)
+                 VALUES (?, ?, ?)"
+            );
+            $stmt->bind_param("iss", $user_id, $file_name, $file_path);
+            $stmt->execute();
+            $stmt->close();
         }
 
         $conn->commit();
 
         $_SESSION['alert'] = [
-            'type' => $document_uploaded ? 'success' : (!empty($upload_error) ? 'warning' : 'info'),
-            'title' => $document_uploaded ? 'Success' : (!empty($upload_error) ? 'Partial Success' : 'Profile Updated'),
-            'message' => $document_uploaded
-                ? "Profile and document updated successfully!"
-                : (!empty($upload_error) ? "Profile updated but<br>$upload_error" : "Profile updated successfully!<br><b>No document uploaded!</b>")
+            'type' => 'success',
+            'title' => 'Success',
+            'message' => 'User and document added successfully!'
         ];
 
         header("Location: index.php");
@@ -332,9 +309,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'update') {
 
     } catch (Exception $e) {
         $conn->rollback();
-        die("Update failed: " . $e->getMessage());
+        die("Insert failed: " . $e->getMessage());
     }
 }
+
 
 
 $conn->close();

@@ -3,7 +3,7 @@
 $servername = "localhost";    // usually localhost doamin
 $username   = "root";         // your MySQL username
 $password   = "";             // your MySQL password (if any)
-$dbname     = "usermgmt"; // your database name
+$dbname     = "user-management"; // your database name
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
