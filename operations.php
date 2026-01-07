@@ -2,6 +2,118 @@
 session_start();
 include "db_connection.php";
 
+
+/* ==================== USER LOGIN ==================== */
+if (isset($_POST['action']) && $_POST['action'] === 'login') {
+
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
+
+    // Fetch user by email
+    $stmt = $conn->prepare(
+        "SELECT id, password FROM usermgmt WHERE email = ?"
+    );
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    // ❌ No user found
+    if ($result->num_rows === 0) {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Login Failed',
+            'message' => 'Email not registered'
+        ];
+        header("Location: login.php");
+        exit();
+    }
+
+    $user = $result->fetch_assoc();
+
+    // ❌ Wrong password
+    if (!password_verify($password, $user['password'])) {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Login Failed',
+            'message' => 'Incorrect password'
+        ];
+        header("Location: login.php");
+        exit();
+    }
+
+    // ✅ SUCCESS → create session
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['logged_in'] = true;
+
+    header("Location: index.php");
+    exit();
+}
+
+
+/* ==================== USER SIGNUP ==================== */
+if (isset($_POST['action']) && $_POST['action'] === 'signup') {
+
+    $name = $_POST['name'] ?? '';
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
+
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+    // Check email
+    $check = $conn->prepare("SELECT id FROM usermgmt WHERE email = ?");
+    $check->bind_param("s", $email);
+    $check->execute();
+    $check->store_result();
+
+    if ($check->num_rows > 0) {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Email Exists',
+            'message' => 'This email is already registered'
+        ];
+        header("Location: login.php");
+        exit();
+    }
+    $check->close();
+
+    // INSERT USER
+    $stmt = $conn->prepare(
+        "INSERT INTO usermgmt (name, email, phone, gender, skills, password)
+         VALUES (?, ?, ?, ?, ?, ?)"
+    );
+
+    $phone = "";
+    $gender = "";
+    $skills = "";
+
+    $stmt->bind_param(
+        "ssssss",
+        $name,
+        $email,
+        $phone,
+        $gender,
+        $skills,
+        $hashedPassword
+    );
+
+    if (!$stmt->execute()) {
+        die("Signup failed: " . $stmt->error);
+    }
+
+    $_SESSION['alert'] = [
+        'type' => 'success',
+        'title' => 'Signup Successful',
+        'message' => 'You can now login'
+    ];
+
+    header("Location: login.php");
+    exit();
+}
+
+
+
+
+
 /* ==================== DELETE USER + DOCUMENT ==================== */
 if (isset($_GET['delete_id'])) {
 
@@ -59,17 +171,31 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
     $name  = $_POST['name'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
+    $gender = $_POST['gender'] ?? '';
+    $skills = $_POST['skills'] ?? [];
+    $skillsStr = implode(', ', $skills);
 
     $conn->begin_transaction();
 
     try {
         // 1️⃣ Update user
         $stmt = $conn->prepare(
-            "UPDATE usermgmt SET name=?, email=?, phone=? WHERE id=?"
-        );
-        $stmt->bind_param("sssi", $name, $email, $phone, $id);
-        $stmt->execute();
-        $stmt->close();
+            "UPDATE usermgmt
+            SET name=?, email=?, phone=?, gender=?, skills=?
+            WHERE id=?"
+            );
+            $stmt->bind_param(
+                "sssssi",
+                $name,
+                $email,
+                $phone,
+                $gender,
+                $skillsStr,
+                $id
+            );
+
+            $stmt->execute();
+            $stmt->close();
 
         // 2️⃣ Handle document replace (if new file uploaded)
         if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
@@ -125,122 +251,91 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
 }
 
 /* ==================== INSERT USER WITH DOCUMENT ==================== */
-if (isset($_POST['action']) && $_POST['action'] === 'create') {
 
-    $name  = $_POST['name'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
+if (isset($_POST['action']) && $_POST['action'] === 'update') {
 
-    // Phone validation: must be exactly 10 digits
-if (!preg_match('/^\d{10}$/', $phone)) {
-    // Set alert for invalid phone
-    $_SESSION['alert'] = [
-        'type' => 'error',
-        'title' => 'Invalid Phone Number',
-        'message' => 'Phone number must be exactly 10 digits.'
-    ];
+    $id      = (int)$_POST['id'];// logged-in user ID
+    $phone   = $_POST['phone'];
+    $gender  = $_POST['gender'] ?? '';
+    $skills  = $_POST['skills'] ?? [];
+    $skillsStr = implode(', ', $skills);
 
-    // Redirect back to index.php (PRG pattern)
-    header("Location: index.php");
-    exit;
-}
+    // Phone validation
+    if (!preg_match('/^\d{10}$/', $phone)) {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Invalid Phone Number',
+            'message' => 'Phone number must be exactly 10 digits.'
+        ];
+        header("Location: index.php");
+        exit;
+    }
 
-    // ---------- INSERT USER FIRST ----------
-    $stmt = $conn->prepare("INSERT INTO usermgmt (name, email, phone) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $name, $email, $phone);
+    $conn->begin_transaction();
+    try {
+        // Update user
+        $stmt = $conn->prepare(
+            "UPDATE usermgmt SET phone=?, gender=?, skills=? WHERE id=?"
+        );
+        $stmt->bind_param("sssi", $phone, $gender, $skillsStr, $id);
+        $stmt->execute();
+        $stmt->close();
 
-    if ($stmt->execute()) {
-        // Get the auto-incremented user ID
-        $new_user_id = $conn->insert_id;
-        
         $document_uploaded = false;
         $upload_error = "";
 
-
-        // ---------- HANDLE DOCUMENT UPLOAD ----------
+        // Handle document upload
         if (isset($_FILES['document']) && $_FILES['document']['error'] == 0) {
 
+            // Delete old file
+            $stmt = $conn->prepare("SELECT document_path FROM userdoc_new WHERE user_id=?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $old = $res->fetch_assoc();
+            $stmt->close();
+
+            if ($old && file_exists($old['document_path'])) unlink($old['document_path']);
+
+            // Upload new file
+            $upload_dir = "uploads/";
+            if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+
             $file_name = $_FILES['document']['name'];
-            $file_tmp  = $_FILES['document']['tmp_name'];
-            $file_size = $_FILES['document']['size'];
+            $file_path = $upload_dir . time() . "_" . basename($file_name);
 
-            error_log("Processing file: $file_name, Size: $file_size bytes");
-
-            // 5MB max
-            if ($file_size <= 5242880) {
-
-                // Create uploads folder if not exists
-                $upload_dir = "uploads/";
-                if (!is_dir($upload_dir)) {
-                    mkdir($upload_dir, 0755, true);
-                    error_log("Created uploads directory");
-                }
-
-                // Unique file name
-                $new_file_name = time() . "_" . basename($file_name);
-                $file_path = $upload_dir . $new_file_name;
-
-                error_log("Attempting to move file to: $file_path");
-
-                // Move file to uploads folder
-                if (move_uploaded_file($file_tmp, $file_path)) {
-                    
-                    error_log("File moved successfully. Inserting into database...");
-
-                    // Insert document record into userdoc_new table
-                    $doc_stmt = $conn->prepare(
-                        "INSERT INTO userdoc_new (user_id, document_name, document_path) VALUES (?, ?, ?)"
-                    );
-
-                    $doc_stmt->bind_param("iss", $new_user_id, $file_name, $file_path);
-
-                    if ($doc_stmt->execute()) {
-                        $document_uploaded = true;
-                        error_log("Document inserted successfully with ID: " . $doc_stmt->insert_id);
-                    } else {
-                        $upload_error = "Document insert failed: " . $doc_stmt->error;
-                        error_log("DB Insert Error: " . $doc_stmt->error);
-                    }
-
-                    $doc_stmt->close();
-
-                } else {
-                    $upload_error = "File upload failed. Check folder permissions.";
-                    error_log("move_uploaded_file failed");
-                }
-
+            if (move_uploaded_file($_FILES['document']['tmp_name'], $file_path)) {
+                $stmt = $conn->prepare(
+                    "REPLACE INTO userdoc_new (user_id, document_name, document_path) VALUES (?, ?, ?)"
+                );
+                $stmt->bind_param("iss", $id, $file_name, $file_path);
+                $stmt->execute();
+                $stmt->close();
+                $document_uploaded = true;
             } else {
-                $upload_error = "File size exceeds 5MB limit.";
-                error_log("File too large: $file_size bytes");
-            }
-        } else {
-            if (isset($_FILES['document'])) {
-                error_log("File upload error code: " . $_FILES['document']['error']);
-            } else {
-                error_log("No file uploaded");
+                $upload_error = "File upload failed.";
             }
         }
 
-        // ---------- SET FLASH MESSAGE ----------
+        $conn->commit();
+
         $_SESSION['alert'] = [
             'type' => $document_uploaded ? 'success' : (!empty($upload_error) ? 'warning' : 'info'),
-            'title' => $document_uploaded ? 'Success' : (!empty($upload_error) ? 'Partial Success' : 'User Saved'),
+            'title' => $document_uploaded ? 'Success' : (!empty($upload_error) ? 'Partial Success' : 'Profile Updated'),
             'message' => $document_uploaded
-                ? "User and document saved successfully!<br><small>User ID: $new_user_id</small>"
-                : (!empty($upload_error)
-                    ? "User saved (ID: $new_user_id) but<br>$upload_error"
-                    : "User saved successfully!<br>User ID: $new_user_id<br><b>No document uploaded!</b>")
+                ? "Profile and document updated successfully!"
+                : (!empty($upload_error) ? "Profile updated but<br>$upload_error" : "Profile updated successfully!<br><b>No document uploaded!</b>")
         ];
 
-        $stmt->close();
+        header("Location: index.php");
+        exit;
 
-        header("Location: success.php");
-        exit();
+    } catch (Exception $e) {
+        $conn->rollback();
+        die("Update failed: " . $e->getMessage());
+    }
+}
 
-    } else { 
-        echo "Error inserting user: " . $stmt->error; 
-    } 
-} 
 
 $conn->close();
 ?>

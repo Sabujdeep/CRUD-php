@@ -1,6 +1,14 @@
 <div class="sidebar">
-  <h4 class="text-center text-white mt-3">Admin Panel</h4>
-  <a href="dashboard.php">Dashboard</a>
-  <a href="register_user.php">User Registration</a>
-  <a href="view_users.php">View Users</a>
+  <h3>Admin Dashboard</h3>
+  <nav class="nav flex-column">
+    <a class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'index.php' ? 'active' : '' ?>" 
+       href="index.php">
+       User Details
+    </a>
+
+    <a class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'user_details.php' ? 'active' : '' ?>" 
+       href="user_details.php">
+       User list
+    </a>
+  </nav>
 </div>

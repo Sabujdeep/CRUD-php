@@ -1,0 +1,111 @@
+
+
+<script>
+  // Smooth scroll and active link handling
+  document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Remove active class from all links
+      document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+      
+      // Add active class to clicked link
+      this.classList.add('active');
+      
+      // Smooth scroll to section
+      const targetId = this.getAttribute('href');
+      document.querySelector(targetId).scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    });
+  });
+</script>
+
+
+
+========================================================================
+
+
+index.php/line no 156
+
+      <!-- TABLE (READ & DELETE) -->
+      <div class="mt-5" id="userlist">
+        <h4>List of Users</h4>
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Document</th>
+              <th>Further Action</th>
+
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <!-- Example Row -->
+             <?php
+
+// SQL to fetch all users
+$sql = "
+SELECT 
+    u.id, u.name, u.email, u.phone,
+    d.document_path
+FROM usermgmt u
+LEFT JOIN userdoc_new d ON u.id = d.user_id
+";
+
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+
+    $img = "uploads/default.png"; // fallback image
+
+    if (!empty($row['document_path']) && file_exists($row['document_path'])) {
+        $img = $row['document_path'];   //both has to be true or else blank img will show
+    }
+
+    echo "<tr>";
+    echo "<td>{$row['id']}</td>";
+    echo "<td>{$row['name']}</td>";
+    echo "<td>{$row['email']}</td>";
+    echo "<td>{$row['phone']}</td>";
+
+    // IMAGE PREVIEW
+    echo "<td class='text-center'>
+            <a href='{$img}' target='_blank'>
+    <img src='{$img}' width='60' height='60'
+         style='object-fit:cover;border-radius:6px;'>
+</a>
+          </td>";
+
+    echo "<td class='text-center'>
+            <a href='edit_user.php?id={$row['id']}' class='btn btn-warning btn-sm me-2'>Update</a>
+            <a href='operations.php?delete_id={$row['id']}'
+               class='btn btn-danger btn-sm'
+               onclick=\"return confirm('Are you sure?');\">Delete</a>
+          </td>";
+    echo "</tr>";
+}
+
+} else {
+    echo "<tr><td colspan='5'>No users found.</td></tr>";
+}
+
+$conn->close();
+?>
+
+--------------------------------------------------------------------------------------
+00:15am
+
+              --ORDER BY u.id DESC
+
+
+=============================================
+logout logic
+
+session_destroy();
+header("Location: login.php");

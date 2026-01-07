@@ -1,7 +1,13 @@
 <?php
 include "db_connection.php";  // Connecting to the databawse
-// include "sidebar.php"
-?>
+
+session_start();
+
+// if (!isset($_SESSION['user_id'])) {
+//     header("Location: login.php");
+//     exit();
+// }
+// ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -86,32 +92,21 @@ include "db_connection.php";  // Connecting to the databawse
   </head>
   <body>
     <!-- SIDEBAR -->
-    <div class="sidebar">
-      <h3>📋 Menu</h3>
-      <nav class="nav flex-column">
-        <a class="nav-link active" href="#registration">
-          <svg width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
-          </svg>
-          User Registration
-        </a>
-        <a class="nav-link" href="#userlist">
-          <svg width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-            <path d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM5 4h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 2h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
-          </svg>
-          User Details
-        </a>
-      </nav>
-    </div>
 
+    <?php
+       include "sidebar.php"
+    ?>
+    
 <div class="mainContainer">
       <div class="container mt-15">
-      <h2 class="mb-4 txtDes" id="registration">User Management</h2>
+      <h2 class="mb-4 txtDes" id="registration">User Details</h2>
 
       <!-- CREATE/UPDATE FORM -->
       <form id="userForm" method="POST" action="operations.php" enctype="multipart/form-data" >
-        <div class="mb-3">
-          <label for="name" class="form-label">Name</label>
+            <input type="hidden" name="id" value="<?= $_SESSION['user_id'] ?>">
+            <input type="hidden" name="action" value="update">
+        <!-- <div class="mb-3">
+          <label for="name" class="form-label fw-medium">Name</label>
           <input
             type="text"
             class="form-control"
@@ -120,9 +115,9 @@ include "db_connection.php";  // Connecting to the databawse
             placeholder="Enter name"
             required
           />
-        </div>
+        </div> 
 
-        <div class="mb-3">
+        <div class="mb-3 fw-medium">
           <label for="email" class="form-label">Email</label>
           <input
             type="email"
@@ -132,9 +127,9 @@ include "db_connection.php";  // Connecting to the databawse
             placeholder="Enter email"
             required
           />
-        </div>
+        </div>  -->
 
-        <div class="mb-3">
+        <div class="mb-3 fw-medium">
           <label for="phone" class="form-label">Phone</label>
           <input
             type="text"
@@ -145,10 +140,108 @@ include "db_connection.php";  // Connecting to the databawse
           />
         </div>
 
+        <div class="mb-3">
+  <label class="form-label d-block fw-medium">Gender</label>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="radio"
+      name="gender"
+      id="genderMale"
+      value="Male"
+      required
+    />
+    <label class="form-check-label" for="genderMale">Male</label>
+  </div>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="radio"
+      name="gender"
+      id="genderFemale"
+      value="Female"
+    />
+    <label class="form-check-label" for="genderFemale">Female</label>
+  </div>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="radio"
+      name="gender"
+      id="genderOther"
+      value="Other"
+    />
+    <label class="form-check-label" for="genderOther">Other</label>
+  </div>
+</div>  
+
+      <div class="mb-3">
+  <label class="form-label d-block fw-medium">Skills</label>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      name="skills[]"
+      id="skillProgramming"
+      value="Programming"
+    />
+    <label class="form-check-label" for="skillProgramming">Programming</label>
+  </div>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      name="skills[]"
+      id="skillSwimming"
+      value="Swimming"
+    />
+    <label class="form-check-label" for="skillSwimming">Swimming</label>
+  </div>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      name="skills[]"
+      id="skillFootball"
+      value="Football"
+    />
+    <label class="form-check-label" for="skillFootball">Football</label>
+  </div>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      name="skills[]"
+      id="skillTennis"
+      value="Tennis"
+    />
+    <label class="form-check-label" for="skillTennis">Tennis</label>
+  </div>
+
+  <div class="form-check form-check-inline">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      name="skills[]"
+      id="skillCricket"
+      value="Cricket"
+    />
+    <label class="form-check-label" for="skillCricket">Cricket</label>
+  </div>
+</div>
+
+
        <!-- DOCUMENT UPLOAD SECTION - NEW -->
 
           <div class="mb-3">
-            <label for="document" class="form-label">Choose Document</label>
+            <label for="document" class="form-label fw-medium">Choose Document</label>
             <input
               type="file"
               class="form-control"
@@ -166,81 +259,6 @@ include "db_connection.php";  // Connecting to the databawse
       </form>
 
 
-      <!-- TABLE (READ & DELETE) -->
-      <div class="mt-5" id="userlist">
-        <h4>List of Users</h4>
-        <table class="table table-bordered">
-          <thead class="table-light">
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Document</th>
-              <th>Further Action</th>
-
-            </tr>
-          </thead>
-          <tbody id="userTableBody">
-            <!-- Example Row -->
-             <?php
-
-// SQL to fetch all users
-$sql = "
-SELECT 
-    u.id, u.name, u.email, u.phone,
-    d.document_path
-FROM usermgmt u
-LEFT JOIN userdoc_new d ON u.id = d.user_id
-";
-
-$result = $conn->query($sql);
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-
-    $img = "uploads/default.png"; // fallback image
-
-    if (!empty($row['document_path']) && file_exists($row['document_path'])) {
-        $img = $row['document_path'];   //both has to be true or else blank img will show
-    }
-
-    echo "<tr>";
-    echo "<td>{$row['id']}</td>";
-    echo "<td>{$row['name']}</td>";
-    echo "<td>{$row['email']}</td>";
-    echo "<td>{$row['phone']}</td>";
-
-    // IMAGE PREVIEW
-    echo "<td class='text-center'>
-            <a href='{$img}' target='_blank'>
-    <img src='{$img}' width='60' height='60'
-         style='object-fit:cover;border-radius:6px;'>
-</a>
-          </td>";
-
-    echo "<td class='text-center'>
-            <a href='edit_user.php?id={$row['id']}' class='btn btn-warning btn-sm me-2'>Update</a>
-            <a href='operations.php?delete_id={$row['id']}'
-               class='btn btn-danger btn-sm'
-               onclick=\"return confirm('Are you sure?');\">Delete</a>
-          </td>";
-    echo "</tr>";
-}
-
-} else {
-    echo "<tr><td colspan='5'>No users found.</td></tr>";
-}
-
-$conn->close();
-?>
-
-            <!-- Dynamic rows go here -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-</div>
 <!-- <?php
 session_start();
 $alert = $_SESSION['alert'] ?? null;
@@ -259,7 +277,7 @@ Swal.fire({
 document.querySelectorAll('.deleteUser').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
-        let userId = this.dataset.id;
+        // let userId = this.dataset.id;
 
         Swal.fire({
             title: 'Are you sure?',
@@ -272,34 +290,12 @@ document.querySelectorAll('.deleteUser').forEach(function(btn) {
         }).then((result) => {
             if (result.isConfirmed) {
                 // Redirect to delete action
-                window.location.href = 'operations.php?delete_id=' + userId;
+                window.location.href = 'operations.php?delete_id=';
             }
         });
     });
 });
 </script>
 <?php endif; ?>
-
-<script>
-  // Smooth scroll and active link handling
-  document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      
-      // Remove active class from all links
-      document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
-      
-      // Add active class to clicked link
-      this.classList.add('active');
-      
-      // Smooth scroll to section
-      const targetId = this.getAttribute('href');
-      document.querySelector(targetId).scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    });
-  });
-</script>
   </body>
 </html>
