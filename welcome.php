@@ -15,8 +15,8 @@ session_start();
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./Styles/style.css">
-    <style>    
-.sidebar {
+  <style>
+    .sidebar {
     position: fixed;
     top: 0;
     left: 0;
@@ -32,8 +32,10 @@ session_start();
     position: absolute;
     inset: 0;
     background-image: url(./Styles/bg.jpg);
+    /* background-size: cover; */
+    /* background-position: center; */
     filter: blur(20px);
-    transform: scale(1.1);
+    transform: scale(1.1); /* prevent edge blur cut */
     z-index: -1;
 }
       
@@ -54,10 +56,33 @@ session_start();
         font-weight: 500;
       }
       
+      .sidebar .nav-link:hover {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        transform: translateX(5px);
+      }
+      
+      .sidebar .nav-link.active {
+        background: rgba(255,255,255,0.25);
+        color: white;
+      }
+      
       .mainContainer {
         margin-left: 250px;
       }
-    </style>
+      
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 100%;
+          height: auto;
+          position: relative;
+        }
+        
+        .mainContainer {
+          margin-left: 0;
+        }
+      }
+  </style>
   </head>
   <body>
     <!-- SIDEBAR -->
@@ -65,7 +90,7 @@ session_start();
     include "sidebar.php";
     ?>
 
-    <div class="mainContainer">
+    <div class="mainContainer" >
       <div class="container mt-5 text-center">
         <h1>Welcome!</h1>
         </div>

@@ -16,26 +16,26 @@ session_start();
     />
     <link rel="stylesheet" href="./Styles/style.css">
     <style>    
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 250px;
-    padding: 20px;
-    z-index: 1000;
-    overflow: hidden;
-}
+        .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 250px;
+        padding: 20px;
+        z-index: 1000;
+        overflow: hidden;
+      }
 
-.sidebar::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: url(./Styles/bg.jpg);
-    filter: blur(20px);
-    transform: scale(1.1);
-    z-index: -1;
-}
+      .sidebar::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url(./Styles/bg.jpg);
+        filter: blur(20px);
+        transform: scale(1.1);
+        z-index: -1;
+      }
       
       .sidebar h3 {
         color: white;
@@ -97,12 +97,12 @@ session_start();
           <div class="col-md-6">
             <input type="text" id="searchInput" class="form-control" placeholder="Search by name, email, or phone...">
           </div>
-          <div class="col-md-6 text-end">
+          <div class="col-md-6 text-center">
             <a href="index.php" class="btn btn-primary">
               <svg width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16">
                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
               </svg>
-              Add Details
+              Add Users
             </a>
           </div>
         </div>
@@ -112,9 +112,10 @@ session_start();
           <table class="table table-bordered table-hover">
             <thead class="table-light">
               <tr>
+                <!-- <th>ID</th> -->
                 <th>ID</th>
                 <th>Name</th>
-                <!-- <th>Email</th> -->
+                <th>Email</th>
                 <th>Phone</th>
                 <th>Gender</th>
                 <th>Skills</th>
@@ -129,8 +130,8 @@ session_start();
                 SELECT 
                    u.id, u.name, u.email, u.phone, u.gender, u.skills,
                    d.document_path
-                FROM usermgmt u
-                LEFT JOIN userdoc_new d ON u.id = d.user_id
+                FROM users u
+                LEFT JOIN user_documents d ON u.id = d.user_id
               ";
 
               $result = $conn->query($sql);
@@ -146,7 +147,7 @@ session_start();
                       echo "<tr>";
                       echo "<td>{$row['id']}</td>";
                       echo "<td>{$row['name']}</td>";
-                      // echo "<td>{$row['email']}</td>";
+                      echo "<td>{$row['email']}</td>";
                       echo "<td>{$row['phone']}</td>";
                       echo "<td>{$row['gender']}</td>";
                       echo "<td>{$row['skills']}</td>";

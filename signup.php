@@ -56,11 +56,18 @@
             required />
         </div>
 
-        <div class="d-flex justify-content-between">
-          <button type="submit" class="btn btn-primary mt-3">
-            Sign Up
-          </button>
-        </div>
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <button type="submit" class="btn btn-primary">
+      Submit
+    </button>
+
+    <div>
+      <small class="me-2">Already an user?</small>
+        <a href="login.php" class="btn btn-outline-secondary btn-sm">
+          Login
+        </a>
+    </div>
+  </div>
       </form>
 
     </div>

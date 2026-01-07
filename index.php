@@ -99,7 +99,7 @@ session_start();
     
 <div class="mainContainer">
       <div class="container mt-15">
-      <h2 class="mb-4 txtDes" id="registration">Add User</h2>
+      <h2 class="mb-4 txtDes" id="registration">Insert User</h2>
 
       <!-- CREATE/UPDATE FORM -->
       <form id="userForm" method="POST" action="operations.php" enctype="multipart/form-data" >
@@ -252,8 +252,6 @@ session_start();
             />
             <small class="text-muted">Accepted formats: PDF, DOC, DOCX, TXT, JPG, PNG (Max 5MB)</small>
           </div>
-          <!-- <input type="hidden" name="action" value="create"> -->
-
 
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>

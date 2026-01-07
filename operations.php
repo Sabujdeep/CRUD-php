@@ -115,7 +115,7 @@ if (isset($_GET['delete_id'])) {
     try {
         // 1️⃣ Get document paths
         $stmt = $conn->prepare(
-            "SELECT document_path FROM userdoc_new WHERE user_id = ?"
+            "SELECT document_path FROM user_documents WHERE user_id = ?"
         );
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -130,7 +130,7 @@ if (isset($_GET['delete_id'])) {
 
         // 2️⃣ Delete documents from DB
         $stmt = $conn->prepare(
-            "DELETE FROM userdoc_new WHERE user_id = ?"
+            "DELETE FROM user_documents WHERE user_id = ?"
         );
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -138,7 +138,7 @@ if (isset($_GET['delete_id'])) {
 
         // 3️⃣ Delete user
         $stmt = $conn->prepare(
-            "DELETE FROM usermgmt WHERE id = ?"
+            "DELETE FROM users WHERE id = ?"
         );
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -146,7 +146,7 @@ if (isset($_GET['delete_id'])) {
 
         $conn->commit();
 
-        header("Location: index.php"); //redirects user
+        header("Location: welcome.php"); //redirects user
         exit();     
 
     } catch (Exception $e) {
@@ -158,7 +158,7 @@ if (isset($_GET['delete_id'])) {
 
 
 /* ==================== UPDATE USER ==================== */
-if (isset($_POST['id']) && !empty($_POST['id'])) {
+if (isset($_POST['action']) && $_POST['action'] === 'update') {
 
     $id    = (int)$_POST['id'];
     $name  = $_POST['name'];
@@ -173,7 +173,7 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
     try {
         // 1️⃣ Update user
         $stmt = $conn->prepare(
-            "UPDATE usermgmt
+            "UPDATE users
             SET name=?, email=?, phone=?, gender=?, skills=?
             WHERE id=?"
             );
@@ -195,7 +195,7 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
 
             // Get old file
             $stmt = $conn->prepare(
-                "SELECT document_path FROM userdoc_new WHERE user_id = ?"
+                "SELECT document_path FROM user_documents WHERE user_id = ?"
             );
             $stmt->bind_param("i", $id);
             $stmt->execute();
@@ -220,7 +220,7 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
 
             // Replace DB record
             $stmt = $conn->prepare(
-                "REPLACE INTO userdoc_new (user_id, document_name, document_path)
+                "REPLACE INTO user_documents (user_id, document_name, document_path)
                  VALUES (?, ?, ?)"
             );
             $stmt->bind_param(
@@ -234,7 +234,14 @@ if (isset($_POST['id']) && !empty($_POST['id'])) {
         }
 
         $conn->commit();
-        header("Location: index.php");
+
+        $_SESSION['alert'] = [
+            'type' => 'success',
+            'title' => 'Success',
+            'message' => 'User and document updated successfully!'
+        ];
+
+        header("Location: user_details.php");
         exit();
 
     } catch (Exception $e) {
@@ -312,6 +319,60 @@ if (isset($_POST['action']) && $_POST['action'] === 'upload') {
         die("Insert failed: " . $e->getMessage());
     }
 }
+
+
+/* ==================== CHANGE PASSWORD ==================== */
+if (isset($_POST['action']) && $_POST['action'] === 'change_password') {
+
+    $admin_id = $_SESSION['user_id'];
+    $current  = $_POST['current_password'];
+    $new      = $_POST['new_password'];
+    $confirm  = $_POST['confirm_password'];
+
+    if ($new !== $confirm) {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Error',
+            'message' => 'Passwords do not match'
+        ];
+        header("Location: myprofile.php");
+        exit();
+    }
+
+    // Fetch current password
+    $stmt = $conn->prepare("SELECT password FROM admins WHERE id = ?");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $res = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!password_verify($current, $res['password'])) {
+        $_SESSION['alert'] = [
+            'type' => 'error',
+            'title' => 'Error',
+            'message' => 'Current password is incorrect'
+        ];
+        header("Location: myprofile.php");
+        exit();
+    }
+
+    $hashed = password_hash($new, PASSWORD_DEFAULT);
+
+    $stmt = $conn->prepare("UPDATE admins SET password = ? WHERE id = ?");
+    $stmt->bind_param("si", $hashed, $admin_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $_SESSION['alert'] = [
+        'type' => 'success',
+        'title' => 'Success',
+        'message' => 'Password updated successfully'
+    ];
+
+    header("Location: welcome.php");
+    exit();
+}
+
 
 
 

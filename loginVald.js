@@ -2,10 +2,6 @@
   window.location.href = "signup.php";
 });
 
-//   document.getElementById("loginBtn").addEventListener("click", function () {
-//     console.log("working")
-//   window.location.href = "login.php";
-// });
 
 document.getElementById("loginForm").addEventListener("submit", function (e) {
   const email = document.getElementById("email").value.trim();
